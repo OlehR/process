@@ -49,22 +49,21 @@ namespace Process
         }
 
 
-        static private Partition PartitionCreate(int aYear, int aMonth, bool aForever, string aTableName,
+        /*        static private Partition PartitionCreate(int aYear, int aMonth, bool aForever, string aTableName,
             MeasureGroup aMeasugeGroup, Partition aTemplatePartition, string DateFieldName, bool isOracle)
         {
             try
             {
-                Partition p = aMeasugeGroup.Partitions.Add(aMeasugeGroup.ID + " " + ToYYYYMM(aYear, aMonth));
+                Partition p = aMeasugeGroup.Partitions.Add(aMeasugeGroup.Name + " " + ToYYYYMM(aYear, aMonth));
                 p.AggregationDesignID = aTemplatePartition.AggregationDesignID;
                 DateTime dStart = new DateTime(aYear, aMonth, 1);
                 DateTime dEnd = new DateTime(aMonth == 12 ? aYear + 1 : aYear, aMonth == 12 ? 1 : aMonth + 1, 1);
-
 
                 string sql = "select * from " + aTableName + " where " + DateFieldName + " >= " + (isOracle ? "to_date('" + ToYYYYMMDD(dStart) + "','YYYYMMDD')" : ToYYYYMMDD(dStart));
                 if (!aForever)
                     sql += " AND " + DateFieldName + " < " + (isOracle ? "to_date('" + ToYYYYMMDD(dEnd) + "','YYYYMMDD')" : ToYYYYMMDD(dEnd));
                 p.Source = new QueryBinding(aTemplatePartition.DataSource.ID, sql);
-                p.Slice = "[Час].[Календар].[Місяць].&[" + ToYYYYMM(aYear, aMonth) + "]";
+                p.Slice = "[Дата].[Місяць]" + ".&[" + ToYYYYMM(aYear, aMonth) + "]";
                 return p;
             }
             catch (Exception e)
@@ -72,25 +71,46 @@ namespace Process
                 Console.WriteLine("{0} Exception caught.", e);
             }
             return null;
-        }
+        }*/
 
 
-
-        static private Partition PartitionCreate(MeasureGroup parMeasugeGroup, Partition parTemplatePartition, DateTime parDStart, DateTime parDEnd, TypePeriod parType)
+        /// <summary>
+        /// Створюємо партіцию на основі шаблона.
+        /// </summary>
+        /// <param name="parTemplatePartition">Шаблон</param>
+        /// <param name="parDStart">Початкова дата партіциї </param>
+        /// <param name="parDEnd">Цінцева дата Партіциї</param>
+        /// <param name="parType">Періодичність партіциї</param>
+        /// <returns></returns>
+        static private Partition PartitionCreate(Partition parTemplatePartition, DateTime parDStart, DateTime parDEnd, TypePeriod parType)
         {
+            var MeasugeGroup = parTemplatePartition.Parent;
             try
             {
+
                 string varSQL = (parTemplatePartition.Source as QueryBinding).QueryDefinition;
-                string varStartDate = XMLABuilder.GetStartDate(varSQL);
+                bool varIsOracle = IsOracle(varSQL);
+                string varStartDate = XMLABuilder.GetStartDate(varSQL); //Початкова дата для створення партіций
+                
 
-                string varNewSQL = varSQL.Replace(">= ", ">=").Replace(">= ", ">=").Replace(">= ", ">=").Replace("< ", "<").Replace("< ", "<").Replace("< ", "<").
-                    Replace(">=to_date('" + varStartDate, ">= to_date('" + ToYYYYMMDD(parDStart)).Replace("<to_date('00010101", "< to_date('" + ToYYYYMMDD(parDEnd));
+                string varNewSQL;
+                if (varSQL.IndexOf("1=0") > 0)
+                {
+                    string varDateField = DateFieldNameFromQueryGet(varSQL);//tmp
+                    string table = TableNameFromQueryGet(varSQL); //tmp                    
+                    varNewSQL = "select * from " + table + " where " + varDateField + " >= " + (varIsOracle ? "to_date('" + ToYYYYMMDD(parDStart) + "','YYYYMMDD')" : ToYYYYMMDD(parDStart))+" AND " + varDateField + " < " + (varIsOracle ? "to_date('" + ToYYYYMMDD(parDEnd) + "','YYYYMMDD')" : ToYYYYMMDD(parDEnd));
+                }
+                else
+                {
+                    varNewSQL = varSQL.Replace(">= ", ">=").Replace(">= ", ">=").Replace(">= ", ">=").Replace("< ", "<").Replace("< ", "<").Replace("< ", "<").
+                        Replace(">=to_date('" + varStartDate, ">= to_date('" + ToYYYYMMDD(parDStart)).Replace("<to_date('00010101", "< to_date('" + ToYYYYMMDD(parDEnd));
+                }
 
-                Partition p = parMeasugeGroup.Partitions.Add(parMeasugeGroup.ID + " " + (parType ==TypePeriod.Week || parType==TypePeriod.Week4 ? ToYYYYMMDD(parDStart) : ToYYYYMM(parDStart)));
+                Partition p = MeasugeGroup.Partitions.Add(MeasugeGroup.Name + " " + (parType ==TypePeriod.Week || parType==TypePeriod.Week4 ? ToYYYYMMDD(parDStart) : ToYYYYMM(parDStart)));
                 p.AggregationDesignID = parTemplatePartition.AggregationDesignID;
                 p.Source = new QueryBinding(parTemplatePartition.DataSource.ID, varNewSQL);
                 if (parType == TypePeriod.Month)
-                    p.Slice = "[Час].[Календар].[Місяць].&[" + ToYYYYMM(parDStart) + "]";
+                    p.Slice = /*"[Час].[Календар].[Місяць]*/"[Дата].[Місяць]" + ".&[" + ToYYYYMM(parDStart) + "]";
                 return p;
             }
             catch (Exception e)
@@ -118,7 +138,11 @@ namespace Process
         public static string GetStartDate(string aSql)
         {
             string sqlmod = aSql.Replace("\n", " ").Replace("\t", " ").Replace(">= ", ">=").Replace(">= ", ">=").Replace(">= ", ">=").Replace(">= ", ">=");
-            string rest = sqlmod.Substring(sqlmod.ToLower().IndexOf(">=to_date(") + 11).Trim();
+            string rest;
+            if (sqlmod.ToLower().IndexOf(">=to_date(")!=-1)
+              rest = sqlmod.Substring(sqlmod.ToLower().IndexOf(">=to_date(") + 11).Trim();
+            else
+                rest = sqlmod.Substring(sqlmod.ToLower().IndexOf(">=") + 2).Trim();
             return rest.Substring(0, 8);
         }
 
@@ -144,22 +168,20 @@ namespace Process
 
         private static int DayProcess(string varStr)
         {
-            int varRez = 0;
-            if (varStr == null) return 20;
+            if (GlobalVar.varDayProcess > 0) return GlobalVar.varDayProcess;
+            int varRes = GlobalVar.varDefaultDayProcess;
+            if (varStr == null) return varRes;
             if ((varStr.Trim().ToLower().Substring(0, 4) == "pr=>"))
             {
                 try
                 {
-                    varRez = Convert.ToInt16(strings.GetWordNum(strings.GetWordNum(varStr.Trim().Substring(4), 1, ";"), 2, ","));
+                    varRes = Convert.ToInt16(strings.GetWordNum(strings.GetWordNum(varStr.Trim().Substring(4), 1, ";"), 2, ","));
                 }
                 catch
-                {
-                    varRez = 0;
+                {                    
                 }
-                return varRez;
-
             }
-            return 0;
+            return varRes;
         }
 
         static private string ToYYYYMM(int aYear, int aMonth)
@@ -275,7 +297,7 @@ namespace Process
                                 "template partition should have query binding \"select * from tablename where 1=0\"");
                         //string table = TableNameFromQueryGet((pTemplate.Source as QueryBinding).QueryDefinition);
                         string varStrStartDate = GetStartDate((pTemplate.Source as QueryBinding).QueryDefinition);
-                        DateTime varRealStartDate = new DateTime(Convert.ToInt32(varStrStartDate.Substring(0, 4)), Convert.ToInt32(varStrStartDate.Substring(4, 2)), Convert.ToInt32(varStrStartDate.Substring(6, 2)));
+                         DateTime varRealStartDate = new DateTime(Convert.ToInt32(varStrStartDate.Substring(0, 4)), Convert.ToInt32(varStrStartDate.Substring(4, 2)), Convert.ToInt32(varStrStartDate.Substring(6, 2)));
                         DateTime varStartDate;
                         if (GlobalVar.varIsArx)
                         {
@@ -288,23 +310,23 @@ namespace Process
                         else
                             varStartDate = varRealStartDate;
                         DateTime varEndDate = varStartDate;
-                        bool varIsOracle = IsOracle((pTemplate.Source as QueryBinding).QueryDefinition);
-                        string varDateField = "", table = "";
-                        if (g.Partitions.FindByName("template") != null) //TMP
+
+                        //string varDateField = "", table = "";
+/*                        if (g.Partitions.FindByName("template") != null) //TMP
                         {
                             varDateField = DateFieldNameFromQueryGet((pTemplate.Source as QueryBinding).QueryDefinition);//tmp
                             table = TableNameFromQueryGet((pTemplate.Source as QueryBinding).QueryDefinition); //tmp
-                        }
+                        }*/
                         while (varStartDate <= varNow)
                         {
                             currentPartition = PartitionFind(g, varStartDate);
                             varEndDate = CountNextPreviousDate(varStartDate, varType);
                             if (currentPartition == null)
                             {
-                                if (g.Partitions.FindByName("template") == null)
-                                    currentPartition = PartitionCreate(g, pTemplate, varStartDate, varEndDate, varType);
-                                else
-                                    currentPartition = PartitionCreate(varStartDate.Year, varStartDate.Month, false, table, g, pTemplate, varDateField, varIsOracle);
+                             //   if (g.Partitions.FindByName("template") == null)
+                                    currentPartition = PartitionCreate(pTemplate, varStartDate, varEndDate, varType);
+                             // else
+                             //     currentPartition = PartitionCreate(varStartDate.Year, varStartDate.Month, false, table, g, pTemplate, varDateField, varIsOracle);
 
                                 currentPartition.Update();
                                 Console.WriteLine("Створено партіцию=>" + currentPartition.Name);
@@ -338,8 +360,8 @@ namespace Process
                     "\\log\\Error_" + DateTime.Now.ToString("yyyyMMdd") + ".log";
 
             script.AppendLine(@"
- <ErrorConfiguration>
-      <KeyErrorLogFile>" + GlobalVar.varKeyErrorLogFile + @"</KeyErrorLogFile>
+ <ErrorConfiguration>"+
+      /*<KeyErrorLogFile>" + GlobalVar.varKeyErrorLogFile + @"</KeyErrorLogFile>*/@"
       <KeyErrorAction>ConvertToUnknown</KeyErrorAction>
       <KeyNotFound>IgnoreError</KeyNotFound>
       <NullKeyConvertedToUnknown>IgnoreError</NullKeyConvertedToUnknown>
@@ -536,7 +558,7 @@ namespace Process
                         {
                             varCurrentPartition = FindLastPartition(g);
                             //Якщо дані в партіциї
-                            if (GetDateStartPartition(varCurrentPartition) > DateTime.Now.AddDays(-(DayProcess(g.Description) == 0 ? GlobalVar.varDayProcess : DayProcess(g.Description))))
+                            if (GetDateStartPartition(varCurrentPartition) > DateTime.Now.AddDays(-(DayProcess(g.Description) )))
                                 varPreviousPartition = PreviousLastPartition(g);
                         }
                         foreach (Partition p in g.Partitions)

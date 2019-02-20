@@ -18,9 +18,11 @@ namespace Process
         public static int varStep = 0, varMetod = 0;
         public static int varTimeStart = 0, varTimeEnd = 24;
         public static int varMaxParallel = 0;
-        public static int varDayProcess = 20;
+        public static int varDayProcess = -1;
         public static DateTime varDateStartProcess = DateTime.Now;
         public static bool varIsArx = false;
         public static DateTime varArxDate = new DateTime(1, 1, 1);
+        public static int varDefaultDayProcess = -1;
+     
     }
 }
