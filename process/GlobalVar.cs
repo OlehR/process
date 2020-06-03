@@ -23,6 +23,8 @@ namespace Process
         public static bool varIsArx = false;
         public static DateTime varArxDate = new DateTime(1, 1, 1);
         public static int varDefaultDayProcess = -1;
-     
+        public static string varServicesOlap = "";
+        public static int varRestartServicesOlap = 0;
+
     }
 }

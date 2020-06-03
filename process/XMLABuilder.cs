@@ -544,11 +544,11 @@ namespace Process
                     {
                         if (g.State == AnalysisState.Unprocessed || g.State == AnalysisState.PartiallyProcessed || parStep != 0)
                             //                 GlobalList.Add(new ProcessingTask(ProcessType.ProcessFull, parCube.Parent.ID, parCube.ID, g.ID));
-                            if (g.State == AnalysisState.Unprocessed || CountPartition(g) <= 2)
+                            /*if (g.State == AnalysisState.Unprocessed || CountPartition(g) <= 2)
                                 GlobalListOnLine.Add(new ProcessingOnLine(GlobalVar.varProcessCube, g));
-                            else
+                            else*/
                                 foreach (Partition p in g.Partitions)
-                                    if (p.State == AnalysisState.Unprocessed || (p.Description == null ? null : p.Description.Substring(0, 8)) == "current;")
+                                    if (p.State == AnalysisState.Unprocessed || (p.Description == null ? null : p.Description.Substring(0, 8)) == "current;" || g.Partitions.Count==1)
                                         GlobalListOnLine.Add(new ProcessingOnLine(GlobalVar.varProcessCube, p));
                     }
                     else
@@ -582,14 +582,18 @@ namespace Process
             foreach (MeasureGroup g in parCube.MeasureGroups)
             {
                 if (!g.IsLinked || (g.IsLinked && (StateMeasure(parCube.Parent, g.Source.CubeID, g.Source.MeasureGroupID) == AnalysisState.Processed)))
-                    if (GetTypePartition(g) == 0)
+                    if (GetTypePartition(g) == TypePeriod.NotDefined)
                     {
                         if (g.State == AnalysisState.Unprocessed)
                             if ((varTemplatePartition = g.Partitions.FindByName("template_QuickUp")) != null)
 
                                 GlobalListOnLine.Add(new ProcessingOnLine(GlobalVar.varProcessCube, varTemplatePartition));
                             else
-                                GlobalListOnLine.Add(new ProcessingOnLine(GlobalVar.varProcessCube, g));
+                                foreach (Partition p in g.Partitions)
+                                {
+                                    GlobalListOnLine.Add(new ProcessingOnLine(GlobalVar.varProcessCube, p));
+                                    break;
+                                }
                     }
                     else
                     {
@@ -625,10 +629,10 @@ namespace Process
             QuickUp1(parCube);
             ProcessPartXMLA();
 
-            GlobalListOnLine.Clear();
+            /*GlobalListOnLine.Clear();
             QuickUp2(parCube);
             ProcessPartXMLA();
-
+            */
             GlobalListOnLine.Clear();
 
         }
@@ -651,6 +655,7 @@ namespace Process
             Server s = new Server();
             try
             {
+                Log.log("Try Connect=>" + parDB);
                 s.Connect(parConnectionString);
                 Database varDB = s.Databases.FindByName(parDB);
 
@@ -658,7 +663,7 @@ namespace Process
                 XMLACl.Connect(parConnectionString);
 
                 //                AddSlicePartition(varDB); //TMP
-
+                Log.log("Connect=>"+ parDB);
 
                 if (parStep < -9990)
                 {
@@ -679,6 +684,7 @@ namespace Process
                 // dimensions processing   || Процесимо діменшини.              
                 if (parCube == null && GlobalVar.varIsProcessDimension)
                 {
+                    Log.log("Dimensions processing" + parDB);
                     foreach (Dimension dim in varDB.Dimensions)
                         GlobalListOnLine.Add(new ProcessingOnLine(SafeProcTypeGet(dim, GlobalVar.varProcessDimension), dim));
                     ProcessPartXMLA();
@@ -686,6 +692,7 @@ namespace Process
                 }
 
                 //Створення нових партіций.
+                Log.log("Try CreatePartition");
                 if (parCube == null)
                     foreach (Cube varC in varDB.Cubes)
                         CreatePartition(varC);
@@ -693,14 +700,17 @@ namespace Process
                     CreatePartition(varDB.Cubes.FindByName(parCube));
 
                 // Швидке підняття куба
+                
                 if (parCube == null)
                     foreach (Cube varC in varDB.Cubes)
                         QuickUp(varC);
                 else
                     QuickUp(varDB.Cubes.FindByName(parCube));
 
-
+                
                 //Процес куба.
+
+                Log.log("Try ListProcess");
                 if (parCube == null)
                     foreach (Cube varCube in varDB.Cubes)
                         AddListProcessPartition(varCube, parStep);
@@ -710,6 +720,7 @@ namespace Process
                     AddListProcessPartition(varCube, parStep);
                 }
                 WaitOracle(parStep);
+                Log.log("Try Process");
                 ProcessPartXMLA();
 
                 // Всі куби процесимо INDEX (Якщо процесили діменшини)

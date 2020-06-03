@@ -43,15 +43,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\PROC\Cube.cs">
-      <Link>Cube.cs</Link>
-    </Compile>
-    <Compile Include="..\..\PROC\MyMail.cs">
-      <Link>MyMail.cs</Link>
-    </Compile>
-    <Compile Include="..\..\PROC\VFP.cs">
-      <Link>VFP.cs</Link>
-    </Compile>
     <Compile Include="Test.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
