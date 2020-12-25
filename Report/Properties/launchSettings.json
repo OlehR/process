@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Report": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Temp\\Report\\TEST.xlsm"
+    }
+  }
+}
