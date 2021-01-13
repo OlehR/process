@@ -53,8 +53,8 @@ namespace Report
 
             Success.Append($"End {DateTime.Now} {pSource}{Environment.NewLine}");
                 if (Error != null && Error.Length > 0)
-                    Console.WriteLine(Error);
-                Console.WriteLine(Success);
+                    Console.WriteLine(Error.ToString());
+                Console.WriteLine(Success.ToString());
             string DT = DateTime.Now.ToString("yyyyMMddHHmmss");
             string FileName = Path.Combine(Path.GetDirectoryName(pSource), "Result", $"Log_{DT}.log");
             File.WriteAllText(FileName, Error.ToString() + Environment.NewLine + Success.ToString());
@@ -144,14 +144,18 @@ namespace Report
                 if (ParRequest != null)
                     ResPar = MsSQL.RunMsSQL(ParRequest);
                 else
-                    ResPar = new List<cParameter>() { new cParameter() { EMail = Email, } };
+                    ResPar = new List<cParameter>() { new cParameter() { EMail = Email,Name="" } };
 
                 foreach (var el in ResPar)
                 {
-                    worksheet.Cells[ParRequest.Row, ParRequest.Column].value = el.Par;
-                    worksheet.Cells[ParRequest.Row, ParRequest.Column + 1].value = el.Name;
-                    worksheet.Cells[ParRequest.Row, ParRequest.Column + 2].value = el.EMail;
-
+                    if (ParRequest != null)
+                    {
+                        worksheet.Cells[ParRequest.Row, ParRequest.Column].value = el.Par1;
+                        worksheet.Cells[ParRequest.Row, ParRequest.Column + 1].value = el.Name;
+                        worksheet.Cells[ParRequest.Row, ParRequest.Column + 2].value = el.EMail;
+                        if (!string.IsNullOrEmpty(el.Par2))
+                            worksheet.Cells[ParRequest.Row, ParRequest.Column + 3].value = el.Par2;
+                    }
                     ExcelApp.Run(Macro);
                     el.FileName = Path.Combine(path, FileName + "_" + el.Name.Trim() + Extension);
                     if (File.Exists(el.FileName))
@@ -182,7 +186,11 @@ namespace Report
                 try
                 {
                     foreach (var el in ResPar)
-                         Mail.SendMail(el.EMail,el.FileName, null,null,pSuccess,pError);                    
+                    {
+                        var emails = el.EMail.Split(',');
+                        foreach(var email in emails)
+                            Mail.SendMail(email, el.FileName, null, null, pSuccess, pError);
+                    }
                 }
                 catch (Exception ex)
                 {

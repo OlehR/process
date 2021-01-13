@@ -1,12 +1,14 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+
 /*
 using Limilabs.Client.SMTP;
 using Limilabs.Mail;
@@ -14,8 +16,45 @@ using Limilabs.Mail.Fluent;
 */
 namespace Report
 {
+
     public class Mail
     {
+        string SmtpServer, From, Login, Password;
+
+
+        public class YamlConfigurationProvider : FileConfigurationProvider
+        {
+            private readonly string _filePath;
+
+            public YamlConfigurationProvider(FileConfigurationSource source)
+                : base(source)
+            {
+            }
+
+            public override void Load(Stream stream)
+            {
+                throw new NotImplementedException();
+            }
+
+            
+        }
+
+        public Mail()
+        {
+            IConfigurationRoot AppConfiguration;
+            //ConfigurationSource configurationSource =
+
+            //var aa = new FileConfigurationSource() { Path = "appsettings.json" };
+
+            var CurDir = AppDomain.CurrentDomain.BaseDirectory;
+            AppConfiguration = new ConfigurationBuilder().//AddConfiguration( .Add(aa).
+                //.SetBasePath(CurDir) .AddJsonFile("appsettings.json").
+                Build();
+
+            //Global.PathCur = AppConfiguration["MID:Mail"];
+          
+
+        }
         /*       public void SendMail(string pFile, string pTo= "o.rutkovskyj@vopak.uz.ua", StringBuilder pSuccess = null, string pFrom = "reports@vopak.uz.ua",string pPassWord= "tOeD23LCA")
                {
                    IMail email = Limilabs.Mail.Fluent.Mail
