@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ExcelApp = Microsoft.Office.Interop.Excel;
 
 namespace Report
 {
@@ -17,7 +18,7 @@ namespace Report
         /// <summary>
         /// Сторінка куда записати результат
         /// </summary>
-        public string Sheet { get; set; }
+        public ExcelApp.Worksheet Sheet { get; set; }
         /// <summary>
         /// Рядок з відки почати вставляти дані
         /// </summary>
@@ -26,6 +27,8 @@ namespace Report
         /// Колонка з відки почати вставляти дані
         /// </summary>
         public int Column { get; set; }
+
+        public bool IsHead = true;
 
     }
 }

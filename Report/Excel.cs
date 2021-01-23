@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Office.Core; //Added to Project Settings' References from C:\Program Files (x86)\Microsoft Visual Studio 10.0\Visual Studio Tools for Office\PIA\Office14 - "office"
+//using Microsoft.Office.Interop.Excel;
 using ExcelApp = Microsoft.Office.Interop.Excel; //Added to Project Settings' References from C:\Program Files (x86)\Microsoft Visual Studio 10.0\Visual Studio Tools for Office\PIA\Office14 - "Microsoft.Office.Interop.Excel"
 
 namespace Report
@@ -86,8 +87,12 @@ namespace Report
             ExcelApp.Application ExcelApp = null;
             ExcelApp.Workbook ExcelWorkBook = null;
             IEnumerable<cParameter> ResPar = null;
-            bool Result = true;
-            
+            bool Result = true, IsSendFile=true;
+
+            string DeletePage = null, HidePage = null, PathCopy = null, MoveOldFile = null;
+
+
+
             try
             {
                
@@ -123,16 +128,30 @@ namespace Report
                             Email = worksheet.Cells[i, 2].value;
                         else
                          if (str.Equals("pSQL"))
-                            ParRequest = GetRequest(worksheet, i, eClient.MsSql, true);
+                            ParRequest = GetRequest(worksheet, ExcelWorkBook, i, eClient.MsSql, true);
                         else
                           if (str.Equals("pMDX"))
-                            ParRequest = GetRequest(worksheet, i, eClient.MDX, true);
+                            ParRequest = GetRequest(worksheet, ExcelWorkBook, i, eClient.MDX, true);
                         else
                         if (str.Equals("SQL"))
-                            Requests.Add(GetRequest(worksheet, i, eClient.MsSql));
+                            Requests.Add(GetRequest(worksheet, ExcelWorkBook, i, eClient.MsSql));
                         else
                           if (str.Equals("MDX"))
-                            Requests.Add(GetRequest(worksheet, i, eClient.MDX));
+                            Requests.Add(GetRequest(worksheet, ExcelWorkBook, i, eClient.MDX));
+                        else
+                        if (str.Equals("DeletePage"))
+                            DeletePage = worksheet.Cells[i, 2].value;
+                        else
+                        if (str.Equals("HidePage"))
+                            HidePage = worksheet.Cells[i, 2].value;
+                        else
+                        if (str.Equals("PathCopy"))
+                            PathCopy = worksheet.Cells[i, 2].value;
+                        else
+                        if (str.Equals("MoveOldFile"))
+                            MoveOldFile = worksheet.Cells[i, 2].value;
+                        if (str.Equals("IsSendFile"))
+                            IsSendFile= "true".Equals( worksheet.Cells[i, 2].value);
                     }
                 }
 
@@ -156,6 +175,13 @@ namespace Report
                         if (!string.IsNullOrEmpty(el.Par2))
                             worksheet.Cells[ParRequest.Row, ParRequest.Column + 3].value = el.Par2;
                     }
+                    foreach(var r in Requests)
+                    {
+                        if (r.Client == eClient.MsSql)
+                            MsSQL.Run(r);
+
+                    }
+
                     ExcelApp.Run(Macro);
                     el.FileName = Path.Combine(path, FileName + "_" + el.Name.Trim() + Extension);
                     if (File.Exists(el.FileName))
@@ -183,6 +209,37 @@ namespace Report
             //Відправляємо Листи
             if (Result && ResPar != null)
             {
+
+                if(!string.IsNullOrEmpty(DeletePage) || !string.IsNullOrEmpty(HidePage))
+                    {
+                    string[] DeletePages=null;
+                    string[] HidePages = null;
+                    if(!string.IsNullOrEmpty(DeletePage))
+                        DeletePages = DeletePage.Split(',');
+                    if (!string.IsNullOrEmpty(HidePage))
+                        HidePages = HidePage.Split(',');
+
+                    foreach (var el in ResPar)
+                    {
+                        ExcelWorkBook = ExcelApp.Workbooks.Open(el.FileName);
+                        if (DeletePages != null)
+                            foreach (var page in DeletePages)
+                            {
+                                ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets["page"];
+                                worksheet.Delete();
+                            }
+                        if (HidePages != null)
+                            foreach (var page in HidePages)
+                            {
+                                ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets["page"];
+                                worksheet.Visible = Microsoft.Office.Interop.Excel.XlSheetVisibility.xlSheetHidden;
+                            }
+
+
+                    }
+
+
+                    }
                 try
                 {
                     foreach (var el in ResPar)
@@ -206,13 +263,15 @@ namespace Report
             oApp.GetType().InvokeMember("Run", System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.InvokeMethod, null, oApp, oRunArgs);
         }
 
-        static private сRequest GetRequest(ExcelApp.Worksheet worksheet, int pInd, eClient pClient = eClient.NotDefine, bool IsPar = false)
+        static private сRequest GetRequest(ExcelApp.Worksheet worksheet, ExcelApp.Workbook pExcelWorkBook, int pInd, eClient pClient = eClient.NotDefine, bool IsPar = false)
         {
+            
             string Request = worksheet.Cells[pInd, 4].value;
             string Sheet = IsPar ? "config" : worksheet.Cells[pInd, 5].value;
+            ExcelApp.Worksheet Worksheet = (ExcelApp.Worksheet) pExcelWorkBook.Worksheets[Sheet];
             double Column = IsPar ? 5 : worksheet.Cells[pInd, 6].value;
             double Row = IsPar ? pInd : worksheet.Cells[pInd, 7].value;
-            return new сRequest() { Client = pClient, Column = Convert.ToInt32(Column), Row = Convert.ToInt32(Row), Request = Request, Sheet = Sheet };
+            return new сRequest() { Client = pClient, Column = Convert.ToInt32(Column), Row = Convert.ToInt32(Row), Request = Request, Sheet = Worksheet };
         }
 
     }
