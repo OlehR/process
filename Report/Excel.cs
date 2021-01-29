@@ -82,12 +82,12 @@ namespace Report
             }
             return Result;
         }
-        public void ExecuteExcelMacro(string pSourceFile, StringBuilder pSuccess,StringBuilder pError)
+        public void ExecuteExcelMacro(string pSourceFile, StringBuilder pSuccess, StringBuilder pError)
         {
             ExcelApp.Application ExcelApp = null;
             ExcelApp.Workbook ExcelWorkBook = null;
             IEnumerable<cParameter> ResPar = null;
-            bool Result = true, IsSendFile=true;
+            bool Result = true, IsSendFile = true;
 
             string DeletePage = null, HidePage = null, PathCopy = null, MoveOldFile = null;
 
@@ -95,11 +95,11 @@ namespace Report
 
             try
             {
-               
+
                 сRequest ParRequest = null;
                 List<сRequest> Requests = new List<сRequest>();
-                string Macro = "Main", StartMacro=null;
-                string Email = null;               
+                string Macro = "Main", StartMacro = null;
+                string Email = null;
 
                 ExcelApp = new ExcelApp.Application();
                 ExcelApp.DisplayAlerts = false;
@@ -151,7 +151,7 @@ namespace Report
                         if (str.Equals("MoveOldFile"))
                             MoveOldFile = worksheet.Cells[i, 2].value;
                         if (str.Equals("IsSendFile"))
-                            IsSendFile= "true".Equals( worksheet.Cells[i, 2].value);
+                            IsSendFile = "true".Equals(worksheet.Cells[i, 2].value);
                     }
                 }
 
@@ -163,7 +163,7 @@ namespace Report
                 if (ParRequest != null)
                     ResPar = MsSQL.RunMsSQL(ParRequest);
                 else
-                    ResPar = new List<cParameter>() { new cParameter() { EMail = Email,Name="" } };
+                    ResPar = new List<cParameter>() { new cParameter() { EMail = Email, Name = "" } };
 
                 foreach (var el in ResPar)
                 {
@@ -175,14 +175,14 @@ namespace Report
                         if (!string.IsNullOrEmpty(el.Par2))
                             worksheet.Cells[ParRequest.Row, ParRequest.Column + 3].value = el.Par2;
                     }
-                    foreach(var r in Requests)
+                    foreach (var r in Requests)
                     {
                         if (r.Client == eClient.MsSql)
                             MsSQL.Run(r);
 
                     }
 
-                    ExcelApp.Run(Macro);
+                    //ExcelApp.Run(Macro);
                     el.FileName = Path.Combine(path, FileName + "_" + el.Name.Trim() + Extension);
                     if (File.Exists(el.FileName))
                         File.Delete(el.FileName);
@@ -199,22 +199,21 @@ namespace Report
             finally
             {
                 // Закриваємо ексель.
-                if(ExcelWorkBook!=null)
+                if (ExcelWorkBook != null)
                     ExcelWorkBook.Close(false);
-                if (ExcelApp!=null)
-                    ExcelApp.Quit();
+
                 if (ExcelWorkBook != null) { System.Runtime.InteropServices.Marshal.ReleaseComObject(ExcelWorkBook); }
-                if (ExcelApp != null) { System.Runtime.InteropServices.Marshal.ReleaseComObject(ExcelApp); }
+
             }
             //Відправляємо Листи
             if (Result && ResPar != null)
             {
 
-                if(!string.IsNullOrEmpty(DeletePage) || !string.IsNullOrEmpty(HidePage))
-                    {
-                    string[] DeletePages=null;
+                if (!string.IsNullOrEmpty(DeletePage) || !string.IsNullOrEmpty(HidePage))
+                {
+                    string[] DeletePages = null;
                     string[] HidePages = null;
-                    if(!string.IsNullOrEmpty(DeletePage))
+                    if (!string.IsNullOrEmpty(DeletePage))
                         DeletePages = DeletePage.Split(',');
                     if (!string.IsNullOrEmpty(HidePage))
                         HidePages = HidePage.Split(',');
@@ -225,27 +224,48 @@ namespace Report
                         if (DeletePages != null)
                             foreach (var page in DeletePages)
                             {
-                                ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets["page"];
-                                worksheet.Delete();
+                                try
+                                {
+                                    ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets[page];
+                                    worksheet.Delete();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Result = false;
+                                    pError.Append($"Page={page} " + ex.Message + Environment.NewLine);
+                                    pError.Append(Environment.StackTrace + Environment.NewLine);
+                                }
                             }
                         if (HidePages != null)
                             foreach (var page in HidePages)
                             {
-                                ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets["page"];
-                                worksheet.Visible = Microsoft.Office.Interop.Excel.XlSheetVisibility.xlSheetHidden;
+                                try
+                                {
+                                    ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets[page];
+                                    worksheet.Visible = Microsoft.Office.Interop.Excel.XlSheetVisibility.xlSheetHidden;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Result = false;
+                                    pError.Append($"Page={page} " + ex.Message + Environment.NewLine);
+                                    pError.Append(Environment.StackTrace + Environment.NewLine);
+                                }
+
                             }
-
+                        ExcelWorkBook.SaveAs(el.FileName);
+                        if (ExcelWorkBook != null)
+                            ExcelWorkBook.Close(false);
 
                     }
 
 
-                    }
+                }
                 try
                 {
                     foreach (var el in ResPar)
                     {
                         var emails = el.EMail.Split(',');
-                        foreach(var email in emails)
+                        foreach (var email in emails)
                             Mail.SendMail(email, el.FileName, null, null, pSuccess, pError);
                     }
                 }
@@ -255,6 +275,9 @@ namespace Report
                     pError.Append(Environment.StackTrace + Environment.NewLine);
                 }
             }
+            if (ExcelApp != null)
+                ExcelApp.Quit();
+            if (ExcelApp != null) { System.Runtime.InteropServices.Marshal.ReleaseComObject(ExcelApp); }
 
         }
 

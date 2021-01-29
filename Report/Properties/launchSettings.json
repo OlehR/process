@@ -2,7 +2,7 @@
   "profiles": {
     "Report": {
       "commandName": "Project",
-      "commandLineArgs": "D:\\Temp\\Report\\TEST.xlsm"
+      "commandLineArgs": "\"D:\\Temp\\Report\\Звіт N2.xlsm\""
     }
   }
 }
