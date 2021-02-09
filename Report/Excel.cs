@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Office.Core; //Added to Project Settings' References from C:\Program Files (x86)\Microsoft Visual Studio 10.0\Visual Studio Tools for Office\PIA\Office14 - "office"
 //using Microsoft.Office.Interop.Excel;
 using ExcelApp = Microsoft.Office.Interop.Excel; //Added to Project Settings' References from C:\Program Files (x86)\Microsoft Visual Studio 10.0\Visual Studio Tools for Office\PIA\Office14 - "Microsoft.Office.Interop.Excel"
@@ -11,9 +12,25 @@ using ExcelApp = Microsoft.Office.Interop.Excel; //Added to Project Settings' Re
 namespace Report
 {
     public class Excel
-    {
-        Mail Mail = new Mail();
+    {       
+
+        Mail Mail;
         MsSQL MsSQL = new MsSQL();
+        string EmailError, EmailSuccess;
+        public Excel() 
+        {
+            var CurDir = AppDomain.CurrentDomain.BaseDirectory;
+            var AppConfiguration = new ConfigurationBuilder()  
+                .SetBasePath(CurDir).AddJsonFile("appsettings.json").Build();
+            MailConfig MailConfig=new MailConfig();
+            MailConfig.SmtpServer = AppConfiguration.GetSection("Report:Mail:SmtpServer").Value;
+            MailConfig.From = AppConfiguration.GetSection("Report:Mail:From").Value;
+            MailConfig.Login = AppConfiguration.GetSection("Report:Mail:Login").Value;
+            MailConfig.Password = AppConfiguration.GetSection("Report:Mail:Password").Value;
+            Mail = new Mail(MailConfig);
+            EmailError = AppConfiguration.GetSection("Report:EmailError").Value;
+            EmailSuccess = AppConfiguration.GetSection("Report:EmailSuccess").Value;
+        }
         public bool ExecuteExcelsMacro(string pSource)
         {
             string[] Files=null;
@@ -53,9 +70,15 @@ namespace Report
             }
 
             Success.Append($"End {DateTime.Now} {pSource}{Environment.NewLine}");
-                if (Error != null && Error.Length > 0)
-                    Console.WriteLine(Error.ToString());
-                Console.WriteLine(Success.ToString());
+            if (Error != null && Error.Length > 0)
+            {
+                Console.WriteLine(Error.ToString());                
+                Mail.SendMail(EmailSuccess, null , "Помилка формування звітів!!!", Error.ToString());
+            }
+            else
+                Mail.SendMail(EmailSuccess, null, "Звіти успішно зформовано", "Все ОК");
+
+            Console.WriteLine(Success.ToString());
             string DT = DateTime.Now.ToString("yyyyMMddHHmmss");
             string FileName = Path.Combine(Path.GetDirectoryName(pSource), "Result", $"Log_{DT}.log");
             File.WriteAllText(FileName, Error.ToString() + Environment.NewLine + Success.ToString());
@@ -84,6 +107,8 @@ namespace Report
         }
         public void ExecuteExcelMacro(string pSourceFile, StringBuilder pSuccess, StringBuilder pError)
         {
+            pSuccess.Append($"{DateTime.Now} File {pSourceFile}{Environment.NewLine}");
+
             ExcelApp.Application ExcelApp = null;
             ExcelApp.Workbook ExcelWorkBook = null;
             IEnumerable<cParameter> ResPar = null;
@@ -92,10 +117,8 @@ namespace Report
             string DeletePage = null, HidePage = null, PathCopy = null, MoveOldFile = null;
 
 
-
             try
             {
-
                 сRequest ParRequest = null;
                 List<сRequest> Requests = new List<сRequest>();
                 string Macro = "Main", StartMacro = null;
@@ -178,12 +201,18 @@ namespace Report
                     foreach (var r in Requests)
                     {
                         if (r.Client == eClient.MsSql)
+                        {
+                            pSuccess.Append($"{DateTime.Now} Start SQL = {r}{Environment.NewLine}");
                             MsSQL.Run(r);
+                            pSuccess.Append($"{DateTime.Now} End SQL = {r}{Environment.NewLine}");
+                        }
 
                     }
-
-                    //ExcelApp.Run(Macro);
-                    el.FileName = Path.Combine(path, FileName + "_" + el.Name.Trim() + Extension);
+                    pSuccess.Append($"{DateTime.Now} Start Macro = {Macro}{Environment.NewLine}");
+                    ExcelApp.Run(Macro);
+                    pSuccess.Append($"{DateTime.Now} End Macro = {Macro}{Environment.NewLine}");
+                    
+                    el.FileName = Path.Combine(path, FileName + "_" + DateTime.Now.ToString("yyyyMMdd")+ (string.IsNullOrEmpty(el.Name)?"":"_"+ el.Name.Trim()) + Extension);
                     if (File.Exists(el.FileName))
                         File.Delete(el.FileName);
                     ExcelWorkBook.SaveAs(el.FileName);
@@ -205,7 +234,7 @@ namespace Report
                 if (ExcelWorkBook != null) { System.Runtime.InteropServices.Marshal.ReleaseComObject(ExcelWorkBook); }
 
             }
-            //Відправляємо Листи
+            
             if (Result && ResPar != null)
             {
 
@@ -217,7 +246,7 @@ namespace Report
                         DeletePages = DeletePage.Split(',');
                     if (!string.IsNullOrEmpty(HidePage))
                         HidePages = HidePage.Split(',');
-
+                    //Видаляємо сторінки
                     foreach (var el in ResPar)
                     {
                         ExcelWorkBook = ExcelApp.Workbooks.Open(el.FileName);
@@ -236,6 +265,7 @@ namespace Report
                                     pError.Append(Environment.StackTrace + Environment.NewLine);
                                 }
                             }
+                        //Ховаєм сторінки
                         if (HidePages != null)
                             foreach (var page in HidePages)
                             {
@@ -260,13 +290,14 @@ namespace Report
 
 
                 }
+                //Відправляємо Листи
                 try
                 {
                     foreach (var el in ResPar)
                     {
-                        var emails = el.EMail.Split(',');
-                        foreach (var email in emails)
-                            Mail.SendMail(email, el.FileName, null, null, pSuccess, pError);
+                        //var emails = el.EMail.Split(',');
+                        //foreach (var email in emails)
+                            Mail.SendMail(el.EMail, el.FileName, null, null, pSuccess, pError);
                     }
                 }
                 catch (Exception ex)
@@ -287,8 +318,7 @@ namespace Report
         }
 
         static private сRequest GetRequest(ExcelApp.Worksheet worksheet, ExcelApp.Workbook pExcelWorkBook, int pInd, eClient pClient = eClient.NotDefine, bool IsPar = false)
-        {
-            
+        {            
             string Request = worksheet.Cells[pInd, 4].value;
             string Sheet = IsPar ? "config" : worksheet.Cells[pInd, 5].value;
             ExcelApp.Worksheet Worksheet = (ExcelApp.Worksheet) pExcelWorkBook.Worksheets[Sheet];

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -9,83 +10,42 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
-/*
-using Limilabs.Client.SMTP;
-using Limilabs.Mail;
-using Limilabs.Mail.Fluent;
-*/
 namespace Report
 {
+    public class MailConfig
+    { 
+        public string SmtpServer { get; set; }
+        public string From { get; set; }        
+        public string Login { get; set; }
+        public string Password { get; set; }        
 
-    public class Mail
+    }
+    
+public class Mail
     {
-        string SmtpServer, From, Login, Password;
+        
 
-
-        public class YamlConfigurationProvider : FileConfigurationProvider
+        MailConfig Config = new MailConfig();
+        
+        public Mail(MailConfig pMailConfig)
         {
-            private readonly string _filePath;
-
-            public YamlConfigurationProvider(FileConfigurationSource source)
-                : base(source)
-            {
-            }
-
-            public override void Load(Stream stream)
-            {
-                throw new NotImplementedException();
-            }
-
-            
-        }
-
-        public Mail()
-        {
-            IConfigurationRoot AppConfiguration;
-            //ConfigurationSource configurationSource =
-
-            //var aa = new FileConfigurationSource() { Path = "appsettings.json" };
-
-            var CurDir = AppDomain.CurrentDomain.BaseDirectory;
-            AppConfiguration = new ConfigurationBuilder().//AddConfiguration( .Add(aa).
-                //.SetBasePath(CurDir) .AddJsonFile("appsettings.json").
-                Build();
-
-            //Global.PathCur = AppConfiguration["MID:Mail"];
-          
+            Config = pMailConfig;
 
         }
-        /*       public void SendMail(string pFile, string pTo= "o.rutkovskyj@vopak.uz.ua", StringBuilder pSuccess = null, string pFrom = "reports@vopak.uz.ua",string pPassWord= "tOeD23LCA")
-               {
-                   IMail email = Limilabs.Mail.Fluent.Mail
-           .Html(@"Html with an image: <img src=""cid:lena"" />")
-           //.AddVisual(@"c:\lena.jpeg").SetContentId("lena")
-           .AddAttachment(pFile) //.SetFileName("document.doc")
-           .To(pTo)
-           .From(pFrom)
-           .Subject("Звіт")
-           .Create();
-                   using (Smtp smtp = new Smtp())
-                   {
-                       smtp.Connect("mail.vopak.uz.ua", 25);  // or ConnectSSL for SSL
-                       smtp.UseBestLogin(pFrom, pPassWord);//("order@vopak.uz.ua", "JQfzuQtCD");
-                       smtp.SendMessage(email);
-                       smtp.Close();
-                       if (pSuccess != null)
-                           pSuccess.Append($"Send Email to {pTo} file {pFile}{Environment.NewLine}");
-                   }
-               }
-       */
-        public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null, StringBuilder pSuccess = null, StringBuilder pError = null,
-                                    string pSmtpServer = "mail.vopak.uz.ua", string pFrom = "reports@vopak.uz.ua", string pLogin = "reports@vopak.uz.ua", string pPassword = "tOeD23LCA")
+        
+        public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null, StringBuilder pSuccess = null, StringBuilder pError = null)
         {
             try
             {
-                SmtpClient Smtp = new SmtpClient(pSmtpServer, 25);
-                Smtp.Credentials = new NetworkCredential(pLogin, pPassword);
+                SmtpClient Smtp = new SmtpClient(Config.SmtpServer, 25);
+                Smtp.Credentials = new NetworkCredential(Config.Login, Config.Password);
                 MailMessage Message = new MailMessage();
-                Message.From = new MailAddress(pFrom);
-                Message.To.Add(new MailAddress(pTo));
+                Message.From = new MailAddress(Config.From);
+                
+                var emails = pTo.Split(',');
+                foreach (var email in emails)
+                    Message.To.Add(new MailAddress(email));
+
                 Message.Subject = (pSubject == null ? "Send: " + pFile : pSubject);
                 Message.Body = (pBody == null ? "Send: " + pFile : pBody);
 
