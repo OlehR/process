@@ -30,7 +30,6 @@ public class Mail
         public Mail(MailConfig pMailConfig)
         {
             Config = pMailConfig;
-
         }
         
         public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null, StringBuilder pSuccess = null, StringBuilder pError = null)
