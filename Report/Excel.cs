@@ -22,8 +22,31 @@ namespace Report
         Mail Mail;
         MsSQL MsSQL = new MsSQL();
         string EmailError, EmailSuccess;
+        int YearAgoDay, TwoYearAgoDay;
+
+        DateTime FirstDayWeek(DateTime pDT)
+        {
+            int dd_d = (int)pDT.DayOfWeek;
+            if (dd_d == 0)
+                dd_d = 7;
+            dd_d--;
+            return pDT.AddDays(-dd_d);
+        }
+
         public Excel() 
         {
+            int Year = DateTime.Now.Year;
+            DateTime d0 = new DateTime(Year, 1, 1);
+            var fd0 = FirstDayWeek(d0);
+
+            DateTime d1 = new DateTime(Year-1, 1, 1);
+            var fd1 = FirstDayWeek(d1);
+
+            DateTime d2 = new DateTime(Year-2, 1, 1);
+            var fd2 = FirstDayWeek(d2);
+            YearAgoDay = (int)(fd0 - fd1).TotalDays;
+            TwoYearAgoDay = (int)(fd0 - fd2).TotalDays;
+
             var CurDir = AppDomain.CurrentDomain.BaseDirectory;
             var AppConfiguration = new ConfigurationBuilder()  
                 .SetBasePath(CurDir).AddJsonFile("appsettings.json").Build();
@@ -120,6 +143,8 @@ namespace Report
             }
             return Result;
         }
+
+        
         public void ExecuteExcelMacro(string pSourceFile, StringBuilder pSuccess, StringBuilder pError)
         {
             pSuccess.Append($"{DateTime.Now} File {pSourceFile}{Environment.NewLine}");
@@ -199,6 +224,10 @@ namespace Report
                         else
                         if (str.Equals("Arx"))
                             Arx = new cArx() {Row=i,Days= Convert.ToInt32(worksheet.Cells[i, 3].value),  PathMove = worksheet.Cells[i,4].value,EMail= worksheet.Cells[i, 5].value ,DateFormatFile= worksheet.Cells[i, 6].value };
+                        if (str.Equals("YearAgoDay"))
+                            worksheet.Cells[i, 2].value = YearAgoDay;
+                        if (str.Equals("TwoYearAgoDay"))
+                            worksheet.Cells[i, 2].value = TwoYearAgoDay;
                     }
                 }
 
