@@ -11,8 +11,7 @@ namespace Report
         void RunMDX(сRequest pRequest, cParameter pParameter)
         {
 
-            AdomdConnection conn = new AdomdConnection(
-    "Data Source=localhost;Catalog=YourDatabase");
+            AdomdConnection conn = new AdomdConnection("Data Source=localhost;Catalog=YourDatabase");
             conn.Open();
 
             string commandText = @"SELECT FLATTENED 
