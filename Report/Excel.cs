@@ -360,6 +360,7 @@ namespace Report
                     {
                         try
                         {
+                            System.Threading.Thread.Sleep(100);
                             ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets[page];
                             worksheet.Delete();
                             System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
@@ -381,6 +382,7 @@ namespace Report
                     {
                         try
                         {
+                            System.Threading.Thread.Sleep(100);
                             ExcelApp.Worksheet worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets[page];
                             worksheet.Visible = Microsoft.Office.Interop.Excel.XlSheetVisibility.xlSheetHidden;
                             System.Runtime.InteropServices.Marshal.ReleaseComObject(worksheet);
