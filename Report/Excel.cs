@@ -88,6 +88,7 @@ namespace Report
                 if (Files != null)
                 {
                     foreach (var el in Files)
+                        if(!el.StartsWith("~$"))
                         ExecuteExcelMacro(el, Success, Error);
                 }
             }
@@ -218,13 +219,13 @@ namespace Report
                             IsMoveOldFile = worksheet.Cells[i, 2].value;
                         else
                         if (str.Equals("IsSendFile"))
-                            IsSendFile =  worksheet.Cells[i, 2].value;
+                            IsSendFile = worksheet.Cells[i, 2].value;
                         else
                         if (str.Equals("DeleteSend"))
                             DeleteSend = new DeleteSend() { Pages = worksheet.Cells[i, 2].value, eMails = worksheet.Cells[i, 3].value };
                         else
                         if (str.Equals("Arx"))
-                            Arx = new cArx() {Row=i,Days= Convert.ToInt32(worksheet.Cells[i, 3].value),  PathMove = worksheet.Cells[i,4].value,EMail= worksheet.Cells[i, 5].value ,DateFormatFile= worksheet.Cells[i, 6].value };
+                            Arx = new cArx() { Row = i, Days = Convert.ToInt32(worksheet.Cells[i, 3].value), PathMove = worksheet.Cells[i, 4].value, EMail = worksheet.Cells[i, 5].value, DateFormatFile = worksheet.Cells[i, 6].value };
                         else
                         if (str.Equals("YearAgoDay"))
                             worksheet.Cells[i, 2].value = YearAgoDay;
@@ -232,22 +233,28 @@ namespace Report
                         if (str.Equals("TwoYearAgoDay"))
                             worksheet.Cells[i, 2].value = TwoYearAgoDay;
                         else
-                        if(str.Equals("DayMonth"))
+                        if (str.Equals("DayMonth"))
                         {
-                            int DayMonth = Convert.ToInt32( worksheet.Cells[i, 2].value);
-                            CalcReport = (CalcReport==true) || (DateTime.Now.Day == DayMonth);
-                            string pEmail = worksheet.Cells[i, 3].value;
-                            if (!string.IsNullOrEmpty(pEmail))
-                                Email = pEmail;
+                            int DayMonth = Convert.ToInt32(worksheet.Cells[i, 2].value);
+                            CalcReport = (CalcReport == true) || (DateTime.Now.Day == DayMonth);
+                            if (DateTime.Now.Day == DayMonth)
+                            {
+                                string pEmail = worksheet.Cells[i, 3].value;
+                                if (!string.IsNullOrEmpty(pEmail))
+                                    Email = (string.IsNullOrEmpty(Email) ? "" : Email + ",") + pEmail;
+                            }
                         }
                         else
                         if (str.Equals("DayWeek"))
                         {
                             int DayWeek = Convert.ToInt32(worksheet.Cells[i, 2].value);
-                            CalcReport = (CalcReport == true) || (DateTime.Now.Day == DayWeek);
-                            string pEmail = worksheet.Cells[i, 3].value;
-                            if (!string.IsNullOrEmpty(pEmail))
-                                Email = pEmail;
+                            CalcReport = (CalcReport == true) || ((int)DateTime.Now.DayOfWeek == DayWeek);
+                            if ((int)DateTime.Now.DayOfWeek == DayWeek)
+                            {
+                                string pEmail = worksheet.Cells[i, 3].value;
+                                if (!string.IsNullOrEmpty(pEmail))
+                                    Email = (string.IsNullOrEmpty(Email) ? "" : Email + ",") + pEmail;
+                            }
                         }
 
                     }
