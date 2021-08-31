@@ -165,6 +165,7 @@ namespace Report
                 List<сRequest> Requests = new List<сRequest>();
                 string Macro = "Main", StartMacro = null;
                 string Email = null;
+                bool? CalcReport = null;
 
                 ExcelApp = new ExcelApp.Application();
                 ExcelApp.DisplayAlerts = false;
@@ -224,12 +225,35 @@ namespace Report
                         else
                         if (str.Equals("Arx"))
                             Arx = new cArx() {Row=i,Days= Convert.ToInt32(worksheet.Cells[i, 3].value),  PathMove = worksheet.Cells[i,4].value,EMail= worksheet.Cells[i, 5].value ,DateFormatFile= worksheet.Cells[i, 6].value };
+                        else
                         if (str.Equals("YearAgoDay"))
                             worksheet.Cells[i, 2].value = YearAgoDay;
+                        else
                         if (str.Equals("TwoYearAgoDay"))
                             worksheet.Cells[i, 2].value = TwoYearAgoDay;
+                        else
+                        if(str.Equals("DayMonth"))
+                        {
+                            int DayMonth = Convert.ToInt32( worksheet.Cells[i, 2].value);
+                            CalcReport = (CalcReport==true) || (DateTime.Now.Day == DayMonth);
+                            string pEmail = worksheet.Cells[i, 3].value;
+                            if (!string.IsNullOrEmpty(pEmail))
+                                Email = pEmail;
+                        }
+                        else
+                        if (str.Equals("DayWeek"))
+                        {
+                            int DayWeek = Convert.ToInt32(worksheet.Cells[i, 2].value);
+                            CalcReport = (CalcReport == true) || (DateTime.Now.Day == DayWeek);
+                            string pEmail = worksheet.Cells[i, 3].value;
+                            if (!string.IsNullOrEmpty(pEmail))
+                                Email = pEmail;
+                        }
+
                     }
                 }
+                if (CalcReport == false)
+                    return;
 
                 //var r = pSourceFile.Split('.');
                 var path = Path.Combine(Path.GetDirectoryName(pSourceFile), "Result");
