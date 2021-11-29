@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Report
 {
@@ -13,6 +9,7 @@ namespace Report
         public string Par1 { get; set; }
         public string Par2 { get; set; }
         public string FileName { get; set; }
+        public string Macro { get; set; }
 
         public DateTime DateReport { get; set; } = DateTime.Now.Date;
         public string DateFormatFile { get; set; } = "yyyyMMdd";
@@ -31,6 +28,7 @@ namespace Report
             DateReport = pP.DateReport;
             DateFormatFile = pP.DateFormatFile;
             PathMove = pP.PathMove;
+            Macro = pP.Macro;
         }
 
     }

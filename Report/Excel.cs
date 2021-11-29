@@ -143,7 +143,6 @@ namespace Report
             }
             return Result;
         }
-
         
         public void ExecuteExcelMacro(string pSourceFile, StringBuilder pSuccess, StringBuilder pError)
         {
@@ -164,7 +163,7 @@ namespace Report
                 сRequest ParRequest = null;
                 List<сRequest> Requests = new List<сRequest>();
                 string Macro = "Main", StartMacro = null;
-                string Email = null;
+                string Email = null, StartMacroEmail=null;
                 bool? CalcReport = null;
 
                 ExcelApp = new ExcelApp.Application();
@@ -185,7 +184,10 @@ namespace Report
                     if (str != null)
                     {
                         if (str.Equals("StartMacro"))
+                        {
                             StartMacro = worksheet.Cells[i, 2].value;
+                            StartMacroEmail = worksheet.Cells[i, 3].value;
+                        }
                         else
                         if (str.Equals("Macro"))
                             Macro = worksheet.Cells[i, 2].value;
@@ -296,6 +298,10 @@ namespace Report
                     UtilDisc.MoveAllFilesMask(path, $"{FileName}_????????{ext}{Extension}",Path.Combine(path, "Arx"));
                 }
 
+                if (StartMacro != null)
+                    ResPar.Add(new cParameter() { Macro = StartMacro, EMail = StartMacroEmail });
+                
+                
                 foreach (var el in ResPar)
                 {
                     if (Arx != null)
@@ -318,7 +324,7 @@ namespace Report
                         }
                     }
                     pSuccess.Append($"{DateTime.Now} Start Macro = {Macro}{Environment.NewLine}");
-                    ExcelApp.Run(Macro);
+                    ExcelApp.Run(el.Macro??Macro);
                     pSuccess.Append($"{DateTime.Now} End Macro = {Macro}{Environment.NewLine}");
                     var elName = (string.IsNullOrEmpty(el.Name) ? "" : "_" + el.Name.Trim());
                     el.FileName = Path.Combine(path,   $"{FileName}_{el.strDateReportFile}{elName}{Extension}" );

@@ -33,7 +33,7 @@ namespace Report
                             {
                                 cParameter r = new cParameter() { Par1 = reader.GetString(0), Name = reader.GetString(1), EMail = reader.GetString(2) };
                                 if (reader.FieldCount > 3)
-                                    r.Par2 = reader.GetString(2);
+                                    r.Par2 = reader.GetString(3);
                                 res.Add(r);
                                 // Console.WriteLine("{0} {1} {2}", reader.GetString(0), reader.GetString(1), reader.GetString(2));
                             }
