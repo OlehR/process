@@ -34,17 +34,14 @@ public class Mail
         
         public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null, StringBuilder pSuccess = null, StringBuilder pError = null)
         {
+            if (string.IsNullOrEmpty(pTo))
+                return false;
             try
             {
                 SmtpClient Smtp = new SmtpClient(Config.SmtpServer, 25);
                 Smtp.Credentials = new NetworkCredential(Config.Login, Config.Password);
                 MailMessage Message = new MailMessage();
                 Message.From = new MailAddress(Config.From);
-                
-                var emails = pTo.Split(',');
-                foreach (var email in emails)
-                    Message.To.Add(new MailAddress(email));
-
                 Message.Subject = (pSubject == null ? "Send: " + pFile : pSubject);
                 Message.Body = (pBody == null ? "Send: " + pFile : pBody);
 
@@ -58,16 +55,30 @@ public class Mail
                     disposition.ReadDate = System.IO.File.GetLastAccessTime(pFile);
                     Message.Attachments.Add(attach);
                 }
-                Smtp.Send(Message);//отправка
+                var emails = pTo.Split(',');
+                int i = 0;
+                foreach (var email in emails)
+                {
+                    Message.To.Add(new MailAddress(email));
+                    i++;
+                    if (i >= 10)
+                    {
+                        Smtp.Send(Message);//отправка
+                        Message.To.Clear();
+                        i = 0;
+                    }
+                }
+                if(Message.To.Count>0)              
+                    Smtp.Send(Message);//отправка
+
                 if (pSuccess != null)
                     pSuccess.Append($"Send Email to {pTo} file {pFile}{Environment.NewLine}");
                 return true;
             }
             catch (Exception ex)
             {
-                pError.Append(ex.Message + Environment.NewLine);
-                pError.Append(Environment.StackTrace + Environment.NewLine);
-               
+                pError.Append($"{pTo} file {pFile} "+ex.Message + Environment.NewLine);
+                pError.Append(Environment.StackTrace + Environment.NewLine);               
                 return false;
             }
         }

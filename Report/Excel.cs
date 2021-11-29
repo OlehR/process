@@ -48,8 +48,7 @@ namespace Report
             TwoYearAgoDay = (int)(fd0 - fd2).TotalDays;
 
             var CurDir = AppDomain.CurrentDomain.BaseDirectory;
-            var AppConfiguration = new ConfigurationBuilder()  
-                .SetBasePath(CurDir).AddJsonFile("appsettings.json").Build();
+            var AppConfiguration = new ConfigurationBuilder() .SetBasePath(CurDir).AddJsonFile("appsettings.json").Build();
             MailConfig MailConfig=new MailConfig();
             MailConfig.SmtpServer = AppConfiguration.GetSection("Report:Mail:SmtpServer").Value;
             MailConfig.From = AppConfiguration.GetSection("Report:Mail:From").Value;
