@@ -9,6 +9,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Utils;
 
 namespace Report
 {
@@ -23,8 +24,6 @@ namespace Report
     
 public class Mail
     {
-        
-
         MailConfig Config = new MailConfig();
         
         public Mail(MailConfig pMailConfig)
@@ -32,7 +31,7 @@ public class Mail
             Config = pMailConfig;
         }
         
-        public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null, StringBuilder pSuccess = null, StringBuilder pError = null)
+        public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null)
         {
             if (string.IsNullOrEmpty(pTo))
                 return false;
@@ -70,15 +69,12 @@ public class Mail
                 }
                 if(Message.To.Count>0)              
                     Smtp.Send(Message);//отправка
-
-                if (pSuccess != null)
-                    pSuccess.Append($"Send Email to {pTo} file {pFile}{Environment.NewLine}");
+                FileLogger.WriteLogMessage($"Send Email to {pTo} file {pFile}{Environment.NewLine}");
                 return true;
             }
             catch (Exception ex)
             {
-                pError.Append($"{pTo} file {pFile} "+ex.Message + Environment.NewLine);
-                pError.Append(Environment.StackTrace + Environment.NewLine);               
+                FileLogger.WriteLogMessage($"SendMail {pTo} file {pFile} {ex.Message} {Environment.NewLine}{Environment.StackTrace} {Environment.NewLine}");               
                 return false;
             }
         }
