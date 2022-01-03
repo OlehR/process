@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -95,14 +96,21 @@ namespace Report
             {
                 Result = false;
                 FileLogger.WriteLogMessage($"ExecuteExcelsMacro Source=> {pSource} Error=> {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");
+            }         
+            
+            //!TMP Якщо навчусь коректно завершувати ексель
+            foreach (var process in Process.GetProcessesByName("excel"))
+            {
+                process.Kill();
+                FileLogger.WriteLogMessage($"Kill  {process.ProcessName}{Environment.NewLine}");
             }
 
-            FileLogger.WriteLogMessage($"End  {pSource}{Environment.NewLine}");
             if (!Result)
-                Mail.SendMail(EmailSuccess, null , "Помилка формування звітів!!!", FileLogger.GetLog);
+                Mail.SendMail(EmailSuccess, null, "Помилка формування звітів!!!", FileLogger.GetLog);
             else
                 Mail.SendMail(EmailSuccess, null, "Звіти успішно зформовано", "Все ОК");
-          
+
+            FileLogger.WriteLogMessage($"End  {pSource}{Environment.NewLine}");
             return Result;
         }
         bool CreateResultDirectory(string pSourceDirectory)

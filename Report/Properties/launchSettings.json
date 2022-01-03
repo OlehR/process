@@ -2,7 +2,7 @@
   "profiles": {
     "Report": {
       "commandName": "Project",
-      "commandLineArgs": "\"C:\\Work\\Report\\Excel\\Daily\\Рейтинг магазинів.xlsm\""
+      "commandLineArgs": "\"C:\\Work\\Report\\Excel\\Daily\\Бонуси.xlsm\""
     }
   }
 }
