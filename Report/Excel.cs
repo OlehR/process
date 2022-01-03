@@ -60,6 +60,7 @@ namespace Report
             EmailError = AppConfiguration.GetSection("Report:EmailError").Value;
             EmailSuccess = AppConfiguration.GetSection("Report:EmailSuccess").Value;
         }
+        
         public bool ExecuteExcelsMacro(string pSource)
         {
             string[] Files=null;
@@ -113,6 +114,7 @@ namespace Report
             FileLogger.WriteLogMessage($"End  {pSource}{Environment.NewLine}");
             return Result;
         }
+        
         bool CreateResultDirectory(string pSourceDirectory)
         {
             bool Result = true;
@@ -299,10 +301,20 @@ namespace Report
                 }
 
                 if (StartMacro != null)
-                    ResPar.Add(new cParameter() { Macro = StartMacro, EMail = StartMacroEmail });                
-                
+                    ResPar.Add(new cParameter() { Macro = StartMacro, EMail = StartMacroEmail });
+
+                ExcelWorkBook.Close();
                 foreach (var el in ResPar)
                 {
+                    var elName = (string.IsNullOrEmpty(el.Name) ? "" : "_" + el.Name.Trim());
+                    el.FileName = Path.Combine(path, $"{FileName}_{el.strDateReportFile}{elName}{Extension}");
+
+                    ExcelWorkBook = ExcelApp.Workbooks.Open(pSourceFile);
+                    if (File.Exists(el.FileName))
+                        File.Delete(el.FileName);
+                    ExcelWorkBook.SaveAs(el.FileName);
+                    worksheet = (ExcelApp.Worksheet)ExcelWorkBook.Worksheets["config"];
+
                     if (Arx != null)
                         worksheet.Cells[Arx.Row, 2].value = el.DateReport;
                     if (ParRequest != null)
@@ -322,15 +334,16 @@ namespace Report
                             FileLogger.WriteLogMessage($"End SQL = {r}{Environment.NewLine}");
                         }
                     }
-                    FileLogger.WriteLogMessage($"Start Macro = {Macro}{Environment.NewLine}");
+                    FileLogger.WriteLogMessage($"Start Macro = {Macro} FileName=>{el.FileName} {Environment.NewLine}");
                     ExcelApp.Run(el.Macro??Macro);
                     FileLogger.WriteLogMessage($"End Macro = {Macro}{Environment.NewLine}");
-                    var elName = (string.IsNullOrEmpty(el.Name) ? "" : "_" + el.Name.Trim());
-                    el.FileName = Path.Combine(path,   $"{FileName}_{el.strDateReportFile}{elName}{Extension}" );
-                    if (File.Exists(el.FileName))
-                        File.Delete(el.FileName);
-                    ExcelWorkBook.SaveAs(el.FileName);
+                    
+                    
+                    
+                    ExcelWorkBook.Save();
+
                     FileLogger.WriteLogMessage($"Save file {el.FileName}{Environment.NewLine}");
+                    ExcelWorkBook.Close();
                 }         
             }
             catch (Exception ex)
@@ -391,6 +404,7 @@ namespace Report
             
 
         }
+
         private void NAR(object o)
         {
             try
@@ -419,6 +433,7 @@ namespace Report
                FileLogger.WriteLogMessage($"SendMail {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");
             }
         }
+       
         private void HideDeletePage(ExcelApp.Application ExcelApp, IEnumerable<cParameter> ResPar, string[] DeletePages, string[] HidePages, ref bool Result, string pPathCopy=null,bool IsShort=false)
         {
             ExcelApp.Workbook ExcelWorkBook;
