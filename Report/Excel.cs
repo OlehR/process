@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Office.Core; //Added to Project Settings' References from C:\Program Files (x86)\Microsoft Visual Studio 10.0\Visual Studio Tools for Office\PIA\Office14 - "office"
+using Microsoft.Office.Interop.Excel;
 using Utils;
 using ExcelApp = Microsoft.Office.Interop.Excel; //Added to Project Settings' References from C:\Program Files (x86)\Microsoft Visual Studio 10.0\Visual Studio Tools for Office\PIA\Office14 - "Microsoft.Office.Interop.Excel"
 
@@ -64,8 +65,10 @@ namespace Report
         public bool ExecuteExcelsMacro(string pSource)
         {
             string[] Files=null;
-            
-           // StringBuilder Success = new StringBuilder($"Start {DateTime.Now} {pSource}{Environment.NewLine}"), Error = new StringBuilder();
+
+            CloseExcel();
+
+            // StringBuilder Success = new StringBuilder($"Start {DateTime.Now} {pSource}{Environment.NewLine}"), Error = new StringBuilder();
             try
             {
                 // get the file attributes for file or directory
@@ -97,14 +100,10 @@ namespace Report
             {
                 Result = false;
                 FileLogger.WriteLogMessage($"ExecuteExcelsMacro Source=> {pSource} Error=> {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");
-            }         
-            
-            //!TMP Якщо навчусь коректно завершувати ексель
-            foreach (var process in Process.GetProcessesByName("excel"))
-            {
-                process.Kill();
-                FileLogger.WriteLogMessage($"Kill  {process.ProcessName}{Environment.NewLine}");
             }
+
+            //!TMP Якщо навчусь коректно завершувати ексель
+            CloseExcel();
 
             if (!Result)
                 Mail.SendMail(EmailSuccess, null, "Помилка формування звітів!!!", FileLogger.GetLog);
@@ -114,6 +113,25 @@ namespace Report
             FileLogger.WriteLogMessage($"End  {pSource}{Environment.NewLine}");
             return Result;
         }
+        void CloseExcel()
+        {
+            try
+            {
+                //!TMP Якщо навчусь коректно завершувати ексель
+                foreach (var process in Process.GetProcessesByName("excel"))
+                {
+                    process.Kill();
+                    FileLogger.WriteLogMessage($"Kill  {process.ProcessName}{Environment.NewLine}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Result = false;
+                FileLogger.WriteLogMessage($"CloseExcel  Error=> {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");
+            }
+        }
+
+        
         
         bool CreateResultDirectory(string pSourceDirectory)
         {
@@ -143,7 +161,7 @@ namespace Report
             }
             return Result;
         }
-        
+
         public void ExecuteExcelMacro(string pSourceFile)
         {
             FileLogger.WriteLogMessage($"File {pSourceFile}{Environment.NewLine}");
@@ -154,18 +172,18 @@ namespace Report
 
             List<cParameter> ResPar = null;
             bool Result = true, IsSendFile = true, IsMoveOldFile = false;
-            DeleteSend DeleteSend=null;
+            DeleteSend DeleteSend = null;
 
             string DeletePage = null, HidePage = null, PathCopy = null;
 
-            cArx Arx=null;
+            cArx Arx = null;
 
             try
             {
                 сRequest ParRequest = null;
                 List<сRequest> Requests = new List<сRequest>();
                 string Macro = "Main", StartMacro = null;
-                string Email = null, StartMacroEmail=null;
+                string Email = null, StartMacroEmail = null;
                 bool? CalcReport = null;
 
                 ExcelApp = new ExcelApp.Application();
@@ -275,10 +293,10 @@ namespace Report
                 else
                     ResPar = new List<cParameter>() { new cParameter() { EMail = Email, Name = "" } };
 
-                if (Arx != null && Arx.Days>=DateTime.Now.Day) 
+                if (Arx != null && Arx.Days >= DateTime.Now.Day)
                 {
                     var ParArx = new List<cParameter>();
-                    foreach(var el in ResPar)
+                    foreach (var el in ResPar)
                     {
                         var ArxEl = new cParameter(el);
                         if (!string.IsNullOrEmpty(Arx.EMail))
@@ -293,11 +311,11 @@ namespace Report
                     ResPar.AddRange(ParArx);
                 }
 
-                if(IsMoveOldFile)
+                if (IsMoveOldFile)
                 {
-                    var ext = ParRequest==null?"":"_*";
-                   // var MoveFileName = Path.Combine(path, $"{FileName}_????????{ext}{Extension}");
-                    UtilDisc.MoveAllFilesMask(path, $"{FileName}_????????{ext}{Extension}",Path.Combine(path, "Arx"));
+                    var ext = ParRequest == null ? "" : "_*";
+                    // var MoveFileName = Path.Combine(path, $"{FileName}_????????{ext}{Extension}");
+                    UtilDisc.MoveAllFilesMask(path, $"{FileName}_????????{ext}{Extension}", Path.Combine(path, "Arx"));
                 }
 
                 if (StartMacro != null)
@@ -335,36 +353,34 @@ namespace Report
                         }
                     }
                     FileLogger.WriteLogMessage($"Start Macro = {Macro} FileName=>{el.FileName} {Environment.NewLine}");
-                    ExcelApp.Run(el.Macro??Macro);
+                    ExcelApp.Run(el.Macro ?? Macro);
                     FileLogger.WriteLogMessage($"End Macro = {Macro}{Environment.NewLine}");
-                    
-                    
-                    
+
+
+
                     ExcelWorkBook.Save();
 
                     FileLogger.WriteLogMessage($"Save file {el.FileName}{Environment.NewLine}");
                     ExcelWorkBook.Close();
-                }         
+                }
             }
             catch (Exception ex)
             {
-               FileLogger.WriteLogMessage($"ExecuteExcelMacro SourceFile=> {pSourceFile} Error=> {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");                
+                FileLogger.WriteLogMessage($"ExecuteExcelMacro SourceFile=> {pSourceFile} Error=> {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");
             }
             finally
             {
                 NAR(worksheet);
                 worksheet = null;
-                if (ExcelWorkBook != null)
-                    ExcelWorkBook.Close(false, System.Reflection.Missing.Value, System.Reflection.Missing.Value);
+               // if (ExcelWorkBook != null)
+                  //  ExcelWorkBook.Close(false, System.Reflection.Missing.Value, System.Reflection.Missing.Value);
                 NAR(ExcelWorkBook);
                 ExcelWorkBook = null;
-                
-                
             }
-            
+
             if (Result && ResPar != null)
             {
-                if (!string.IsNullOrEmpty(DeletePage) || !string.IsNullOrEmpty(HidePage)||!string.IsNullOrEmpty(PathCopy))
+                if (!string.IsNullOrEmpty(DeletePage) || !string.IsNullOrEmpty(HidePage) || !string.IsNullOrEmpty(PathCopy))
                 {
                     string[] DeletePages = null;
                     string[] HidePages = null;
@@ -373,7 +389,7 @@ namespace Report
                     if (!string.IsNullOrEmpty(HidePage))
                         HidePages = HidePage.Split(',');
                     //Видаляємо сторінки
-                    HideDeletePage(ExcelApp, ResPar, DeletePages, HidePages,ref Result,PathCopy);
+                    HideDeletePage(ResPar, DeletePages, HidePages, ref Result, PathCopy);
                 }
                 //Відправляємо Листи
                 SendMail(ResPar, IsSendFile);
@@ -382,26 +398,30 @@ namespace Report
                 if (DeleteSend != null && !string.IsNullOrEmpty(DeleteSend.Pages) && ResPar.Count == 1)
                 {
                     var DeletePages = DeleteSend.Pages.Split(',');
-                    HideDeletePage(ExcelApp, ResPar, DeletePages, null, ref Result, PathCopy, true);
+                    HideDeletePage(ResPar, DeletePages, null, ref Result, PathCopy, true);
                     SendMail(ResPar, IsSendFile);
                 }
             }
-
-
-
 
             // Закриваємо ексель.
             //NAR(ExcelWorkbooks);
             if (ExcelApp != null)
             {
-                ExcelApp.Application.Quit();
-                ExcelApp.Quit();
-                NAR(ExcelApp);
-                ExcelApp = null;
+                try
+                {
+                    ExcelApp.Application.Quit();
+                    ExcelApp.Quit();
+                    NAR(ExcelApp);
+                    ExcelApp = null;
+                }
+                catch (Exception ex)
+                {
+                    FileLogger.WriteLogMessage($"ExecuteExcelMacro Try Close Exel SourceFile=> {pSourceFile} Error=> {ex.Message}{Environment.NewLine}{Environment.StackTrace}{Environment.NewLine}");
+                }
             }
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            
+
 
         }
 
@@ -434,8 +454,9 @@ namespace Report
             }
         }
        
-        private void HideDeletePage(ExcelApp.Application ExcelApp, IEnumerable<cParameter> ResPar, string[] DeletePages, string[] HidePages, ref bool Result, string pPathCopy=null,bool IsShort=false)
+        private void HideDeletePage( IEnumerable<cParameter> ResPar, string[] DeletePages, string[] HidePages, ref bool Result, string pPathCopy=null,bool IsShort=false)
         {
+            ExcelApp.Application ExcelApp = new ExcelApp.Application();
             ExcelApp.Workbook ExcelWorkBook;
             foreach (var el in ResPar)
             {
@@ -490,7 +511,8 @@ namespace Report
                     }
                 try
                 {
-                    ExcelWorkBook.SaveAs(el.FileName);
+                    ExcelApp.DisplayAlerts = false;
+                    ExcelWorkBook.SaveAs( Filename: el.FileName, AccessMode: XlSaveAsAccessMode.xlNoChange);
                 }
                 catch (Exception ex)
                 {
@@ -504,7 +526,8 @@ namespace Report
                     {
                         if (File.Exists(NewFile))
                             File.Delete(NewFile);
-                        ExcelWorkBook.SaveAs(NewFile);
+                        ExcelApp.DisplayAlerts = false;
+                        ExcelWorkBook.SaveAs(Filename: NewFile, AccessMode: XlSaveAsAccessMode.xlNoChange);
                         el.CopyFileName = NewFile;
                     }
                     catch (Exception ex)
