@@ -33,6 +33,7 @@ public class Mail
         
         public bool SendMail(string pTo, string pFile, string pSubject = null, string pBody = null)
         {
+            pTo = pTo.Replace("\n", "").Replace("\r", "").Replace("\t","");
             if (string.IsNullOrEmpty(pTo))
                 return false;
             try
