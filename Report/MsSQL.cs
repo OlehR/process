@@ -62,7 +62,7 @@ namespace Report
                 {
                     connection.Open();
                     // String sql = "SELECT name, collation_name FROM sys.databases";
-                    using (SqlCommand command = new SqlCommand(pSQL.Request, connection))
+                    using (SqlCommand command = new SqlCommand(pSQL.GetRequest, connection))
                     {
                         using (SqlDataReader reader = command.ExecuteReader())
                         {

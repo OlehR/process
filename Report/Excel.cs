@@ -343,20 +343,21 @@ namespace Report
                         if (!string.IsNullOrEmpty(el.Par2))
                             worksheet.Cells[ParRequest.Row, ParRequest.Column + 3].value = el.Par2;
                     }
+                    
+                    FileLogger.WriteLogMessage($"Start Macro = {Macro} FileName=>{el.FileName} {Environment.NewLine}");
+                    ExcelApp.Run(el.Macro ?? Macro);
+                    FileLogger.WriteLogMessage($"End Macro = {Macro}{Environment.NewLine}");
+
                     foreach (var r in Requests)
                     {
                         if (r.Client == eClient.MsSql)
                         {
+                            r.Sheet = worksheet;
                             FileLogger.WriteLogMessage($"Start SQL = {r}{Environment.NewLine}");
                             MsSQL.Run(r);
                             FileLogger.WriteLogMessage($"End SQL = {r}{Environment.NewLine}");
                         }
                     }
-                    FileLogger.WriteLogMessage($"Start Macro = {Macro} FileName=>{el.FileName} {Environment.NewLine}");
-                    ExcelApp.Run(el.Macro ?? Macro);
-                    FileLogger.WriteLogMessage($"End Macro = {Macro}{Environment.NewLine}");
-
-
 
                     ExcelWorkBook.Save();
 
@@ -558,7 +559,7 @@ namespace Report
             ExcelApp.Worksheet Worksheet = (ExcelApp.Worksheet) pExcelWorkBook.Worksheets[Sheet];
             double Column = IsPar ? 5 : worksheet.Cells[pInd, 6].value;
             double Row = IsPar ? pInd : worksheet.Cells[pInd, 7].value;
-            return new сRequest() { Client = pClient, Column = Convert.ToInt32(Column), Row = Convert.ToInt32(Row), Request = Request, Sheet = Worksheet };
+            return new сRequest() { Client = pClient, Column = Convert.ToInt32(Column), Row = Convert.ToInt32(Row), Request = Request, Sheet = Worksheet,RowRequest= pInd,ColumnReques=4 };
         }
 
     }

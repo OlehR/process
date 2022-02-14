@@ -30,5 +30,10 @@ namespace Report
 
         public bool IsHead = true;
 
-    }
+        public int RowRequest { get; set; }
+        public int ColumnReques { get; set; }
+
+        public string GetRequest { get{ return Sheet==null? Request: Sheet.Cells[RowRequest, ColumnReques].value; } }
+          
+}
 }
