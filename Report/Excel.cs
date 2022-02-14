@@ -352,7 +352,7 @@ namespace Report
                     {
                         if (r.Client == eClient.MsSql)
                         {
-                            r.Sheet = worksheet;
+                            r.ExcelWorkBook = ExcelWorkBook;
                             FileLogger.WriteLogMessage($"Start SQL = {r}{Environment.NewLine}");
                             MsSQL.Run(r);
                             FileLogger.WriteLogMessage($"End SQL = {r}{Environment.NewLine}");
@@ -553,13 +553,14 @@ namespace Report
         }*/
 
         static private сRequest GetRequest(ExcelApp.Worksheet worksheet, ExcelApp.Workbook pExcelWorkBook, int pInd, eClient pClient = eClient.NotDefine, bool IsPar = false)
-        {            
+        {     
+           
             string Request = worksheet.Cells[pInd, 4].value;
-            string Sheet = IsPar ? "config" : worksheet.Cells[pInd, 5].value;
-            ExcelApp.Worksheet Worksheet = (ExcelApp.Worksheet) pExcelWorkBook.Worksheets[Sheet];
+            string NameSheet = IsPar ? "config" : worksheet.Cells[pInd, 5].value;
+            //ExcelApp.Worksheet Worksheet = (ExcelApp.Worksheet) pExcelWorkBook.Worksheets[Sheet];
             double Column = IsPar ? 5 : worksheet.Cells[pInd, 6].value;
             double Row = IsPar ? pInd : worksheet.Cells[pInd, 7].value;
-            return new сRequest() { Client = pClient, Column = Convert.ToInt32(Column), Row = Convert.ToInt32(Row), Request = Request, Sheet = Worksheet,RowRequest= pInd,ColumnReques=4 };
+            return new сRequest() { Client = pClient, Column = Convert.ToInt32(Column), Row = Convert.ToInt32(Row), Request = Request, ExcelWorkBook  = pExcelWorkBook, RowRequest= pInd,ColumnReques=4,NameSheet= NameSheet };
         }
 
     }

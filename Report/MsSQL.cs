@@ -21,6 +21,7 @@ namespace Report
                 builder.UserID = "dwreader";
                 builder.Password = "DW_Reader";
                 builder.InitialCatalog = "for_cubes";
+                builder.ConnectTimeout = 600;
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
                     connection.Open();

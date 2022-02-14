@@ -15,10 +15,16 @@ namespace Report
         public string Request { get; set; }
 
         public eClient Client { get; set; }
+
+        public ExcelApp.Workbook ExcelWorkBook { get; set; }
         /// <summary>
         /// Сторінка куда записати результат
         /// </summary>
-        public ExcelApp.Worksheet Sheet { get; set; }
+        public ExcelApp.Worksheet Sheet { get { return (ExcelApp.Worksheet)ExcelWorkBook.Worksheets[NameSheet]; } }
+
+        public ExcelApp.Worksheet SheetConfig { get { return (ExcelApp.Worksheet)ExcelWorkBook.Worksheets["config"]; } }
+
+        public string NameSheet { get; set; }
         /// <summary>
         /// Рядок з відки почати вставляти дані
         /// </summary>
@@ -33,7 +39,7 @@ namespace Report
         public int RowRequest { get; set; }
         public int ColumnReques { get; set; }
 
-        public string GetRequest { get{ return Sheet==null? Request: Sheet.Cells[RowRequest, ColumnReques].value; } }
+        public string GetRequest { get{ return Sheet==null? Request: SheetConfig.Cells[RowRequest, ColumnReques].value; } }
           
 }
 }
