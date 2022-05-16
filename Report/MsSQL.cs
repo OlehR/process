@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using ExcelApp = Microsoft.Office.Interop.Excel;
 using System.Data;
+using Utils;
 
 namespace Report
 {
@@ -44,7 +45,7 @@ namespace Report
             }
             catch (SqlException e)
             {
-                Console.WriteLine(e.ToString());
+                FileLogger.WriteLogMessage($"MsSQL.Run Error=>  {e}");                
             }
             return res;
         }
@@ -59,15 +60,17 @@ namespace Report
                 builder.UserID = "dwreader";
                 builder.Password = "DW_Reader";
                 builder.InitialCatalog = "for_cubes";
+                builder.ConnectTimeout = 300;
                 using (SqlConnection connection = new SqlConnection(builder.ConnectionString))
                 {
                     connection.Open();
                     // String sql = "SELECT name, collation_name FROM sys.databases";
                     using (SqlCommand command = new SqlCommand(pSQL.GetRequest, connection))
                     {
+                        command.CommandTimeout = 300;
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
-
+                            FileLogger.WriteLogMessage($"MsSQL.Run({pSQL.GetRequest},{pSQL.Row},{pSQL.Column}) ");
                             DataTable dt = new DataTable();
                             dt.Load(reader);
 
@@ -76,7 +79,7 @@ namespace Report
                             {
                                 foreach (DataColumn c in dt.Columns)
                                     pSQL.Sheet.Cells[pSQL.Row, pSQL.Column + i++].value = c.ColumnName;
-                                pSQL.Row++;
+                                //pSQL.Row++;
                             }
                             object[,] arr = new object[dt.Rows.Count, dt.Columns.Count];
                             for (int r = 0; r < dt.Rows.Count; r++)
@@ -87,8 +90,8 @@ namespace Report
                                     arr[r, c] = dr[c];
                                 }
                             }
-                            ExcelApp.Range c1 = (ExcelApp.Range)pSQL.Sheet.Cells[pSQL.Row, pSQL.Column];
-                            ExcelApp.Range c2 = (ExcelApp.Range)pSQL.Sheet.Cells[pSQL.Row + dt.Rows.Count - 1, dt.Columns.Count+ pSQL.Column-1];
+                            ExcelApp.Range c1 = (ExcelApp.Range)pSQL.Sheet.Cells[pSQL.Row+ (pSQL.IsHead?1:0), pSQL.Column];
+                            ExcelApp.Range c2 = (ExcelApp.Range)pSQL.Sheet.Cells[pSQL.Row+ (pSQL.IsHead ? 1 : 0) + dt.Rows.Count - 1, dt.Columns.Count+ pSQL.Column-1];
                             ExcelApp.Range range = pSQL.Sheet.get_Range(c1, c2);
                             range.Value = arr;
                         }
@@ -97,7 +100,8 @@ namespace Report
             }
             catch (SqlException e)
             {
-                Console.WriteLine(e.ToString());
+                FileLogger.WriteLogMessage($"MsSQL.Run Error=>  {e}");
+                //Console.WriteLine(e.ToString());
             }
             return res;
         }
