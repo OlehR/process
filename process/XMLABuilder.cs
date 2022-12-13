@@ -97,8 +97,9 @@ namespace Process
                 if (varSQL.IndexOf("1=0") > 0)
                 {
                     string varDateField = DateFieldNameFromQueryGet(varSQL);//tmp
-                    string table = TableNameFromQueryGet(varSQL); //tmp                    
-                    varNewSQL = "select * from " + table + " where " + varDateField + " >= " + (varIsOracle ? "to_date('" + ToYYYYMMDD(parDStart) + "','YYYYMMDD')" : ToYYYYMMDD(parDStart))+" AND " + varDateField + " < " + (varIsOracle ? "to_date('" + ToYYYYMMDD(parDEnd) + "','YYYYMMDD')" : ToYYYYMMDD(parDEnd));
+                    string table = TableNameFromQueryGet(varSQL); //tmp
+                    string Where = WhereNameFromQueryGet(varSQL);
+                    varNewSQL = $"select * from {table}  where {Where} {varDateField} >= " + (varIsOracle ? "to_date('" + ToYYYYMMDD(parDStart) + "','YYYYMMDD')" : ToYYYYMMDD(parDStart))+" AND " + varDateField + " < " + (varIsOracle ? "to_date('" + ToYYYYMMDD(parDEnd) + "','YYYYMMDD')" : ToYYYYMMDD(parDEnd));
                 }
                 else
                 {
@@ -120,6 +121,17 @@ namespace Process
             return null;
         }
 
+        private static string WhereNameFromQueryGet(string aSql)
+        {
+            string res = "";
+            string sqlmod = aSql.Replace("\n", " ").Replace("\t", " ");
+            string rest = sqlmod.Substring(sqlmod.ToLower().IndexOf("where") + 5).Trim();
+            int ind = rest.IndexOf("1=0");
+            if (ind > 0)
+                res = rest.Substring(0, ind);
+            // Console.WriteLine("@" + rest.Substring(0, rest.IndexOf(" ")) + "@");
+            return res;
+        }
 
         private static string TableNameFromQueryGet(string aSql)
         {
@@ -130,6 +142,10 @@ namespace Process
         }
         private static string DateFieldNameFromQueryGet(string aSql)
         {
+            int ind = aSql.IndexOf("1=0");
+            if (ind > 0)
+                aSql = aSql.Substring(ind + 4);
+
             string sqlmod = aSql.Replace("\n", " ").Replace("\t", " ");
             string rest = sqlmod.Substring(sqlmod.ToLower().IndexOf("and") + 4).Trim();
             // Console.WriteLine("@" + rest.Substring(0, rest.IndexOf(" ")) + "@");

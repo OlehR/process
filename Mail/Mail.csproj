@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Mail</RootNamespace>
     <AssemblyName>Mail</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <AppDesignerFolder>Properties</AppDesignerFolder>
