@@ -17,7 +17,7 @@ namespace Process
         public static string varKeyErrorLogFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\log\\Error_" + DateTime.Now.ToString("yyyyMMdd") + ".log";
         public static int varStep = 0, varMetod = 0;
         public static int varTimeStart = 0, varTimeEnd = 24;
-        public static int varMaxParallel = 0;
+        public static int varMaxParallel = 4;
         public static int varDayProcess = -1;
         public static DateTime varDateStartProcess = DateTime.Now;
         public static bool varIsArx = false;

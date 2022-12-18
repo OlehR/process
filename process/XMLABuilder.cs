@@ -572,10 +572,17 @@ namespace Process
                         Partition varCurrentPartition = null, varPreviousPartition = null;
                         if (parStep != 0)
                         {
-                            varCurrentPartition = FindLastPartition(g);
-                            //Якщо дані в партіциї
-                            if (GetDateStartPartition(varCurrentPartition) > DateTime.Now.AddDays(-(DayProcess(g.Description) )))
-                                varPreviousPartition = PreviousLastPartition(g);
+                            if (g.Partitions?.Count == 1)
+                            {
+                                varCurrentPartition= g.Partitions[0];
+                            }
+                            else
+                            {
+                                varCurrentPartition = FindLastPartition(g);
+                                //Якщо дані в партіциї
+                                if (GetDateStartPartition(varCurrentPartition) > DateTime.Now.AddDays(-(DayProcess(g.Description))))
+                                    varPreviousPartition = PreviousLastPartition(g);
+                            }
                         }
                         foreach (Partition p in g.Partitions)
                         {
