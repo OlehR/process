@@ -349,15 +349,12 @@ namespace Process
                             }
                             varStartDate = varEndDate;
                         }
-
-
                     }
                 }
                 catch (Exception e)
                 {
-                    Log.log("Група мір=>" + g.Name + " Error =>" + e.Message);
+                    Log.log($"{parCube.Name}.{g.Name}  Error =>{e.Message}");
                 }
-
         }
 
 
